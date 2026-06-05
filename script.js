@@ -8,22 +8,17 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ---- 0. Theme Toggle Logic ---- */
   const themeToggleBtn = document.getElementById('theme-toggle');
   const themeIcon = document.getElementById('theme-icon');
-  
-  // Check for saved theme preference or use default
-  const savedTheme = localStorage.getItem('theme');
-  if (savedTheme) {
-    document.documentElement.setAttribute('data-theme', savedTheme);
-    if (savedTheme === 'light') {
-      themeIcon.classList.replace('fa-sun', 'fa-moon');
-    }
+
+  // Sync toggle icon on load based on active theme set by inline script
+  const activeTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+  if (activeTheme === 'light') {
+    themeIcon.classList.replace('fa-sun', 'fa-moon');
   }
 
   themeToggleBtn.addEventListener('click', () => {
     let currentTheme = document.documentElement.getAttribute('data-theme');
-    let targetTheme = 'light';
-    
+
     if (currentTheme === 'light') {
-      targetTheme = 'dark'; // Actually removes the attribute for dark mode
       document.documentElement.removeAttribute('data-theme');
       themeIcon.classList.replace('fa-moon', 'fa-sun');
       localStorage.setItem('theme', 'dark');
@@ -32,9 +27,6 @@ document.addEventListener('DOMContentLoaded', () => {
       themeIcon.classList.replace('fa-sun', 'fa-moon');
       localStorage.setItem('theme', 'light');
     }
-    
-    // Optional: Re-init particles if colors need to change dynamically
-    // A quick hack is just to reload or let them stay since they adapt
   });
 
   /* ---- 1. Initialize AOS (Animate On Scroll) ---- */
@@ -55,7 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
       onComplete: (self) => {
         // Hide the main title cursor after typing is done
         document.querySelector('.typed-cursor').style.display = 'none';
-        
+
         // Start the subtitle typing only after the main title finishes
         if (document.getElementById('typed-output')) {
           new Typed('#typed-output', {
@@ -134,16 +126,16 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ---- 6. Button Ripple Effect ---- */
   const buttons = document.querySelectorAll('.ripple');
   buttons.forEach(btn => {
-    btn.addEventListener('click', function(e) {
+    btn.addEventListener('click', function (e) {
       const rect = this.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
-      
+
       const wave = document.createElement('span');
       wave.classList.add('ripple-wave');
       wave.style.left = `${x}px`;
       wave.style.top = `${y}px`;
-      
+
       this.appendChild(wave);
       setTimeout(() => wave.remove(), 700);
     });
@@ -163,7 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const frames = 60;
           const stepTime = duration / frames;
           const increment = targetVal / frames;
-          
+
           let current = 0;
           const timer = setInterval(() => {
             current += increment;
@@ -173,7 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             target.innerText = (isDecimal ? current.toFixed(1) : Math.floor(current)) + suffix;
           }, stepTime);
-          
+
           obs.unobserve(target); // Only animate once
         }
       });
@@ -209,7 +201,8 @@ document.addEventListener('DOMContentLoaded', () => {
       draw() {
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2, false);
-        ctx.fillStyle = this.color;
+        const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+        ctx.fillStyle = isLight ? 'rgba(0, 0, 0, 0.25)' : 'rgba(255, 255, 255, 0.4)';
         ctx.fill();
       }
       update() {
@@ -250,13 +243,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function connectParticles() {
       let opacityValue = 1;
+      const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+      const lineColorBase = isLight ? 'rgba(0, 0, 0, ' : 'rgba(255, 255, 255, ';
+      const lineOpacityScale = isLight ? 0.15 : 0.2;
+
       for (let a = 0; a < particlesArray.length; a++) {
         for (let b = a; b < particlesArray.length; b++) {
-          let distance = ((particlesArray[a].x - particlesArray[b].x) * (particlesArray[a].x - particlesArray[b].x)) + 
-                         ((particlesArray[a].y - particlesArray[b].y) * (particlesArray[a].y - particlesArray[b].y));
+          let distance = ((particlesArray[a].x - particlesArray[b].x) * (particlesArray[a].x - particlesArray[b].x)) +
+            ((particlesArray[a].y - particlesArray[b].y) * (particlesArray[a].y - particlesArray[b].y));
           if (distance < (canvas.width / 10) * (canvas.height / 10)) {
             opacityValue = 1 - (distance / 20000);
-            ctx.strokeStyle = 'rgba(255, 255, 255, ' + opacityValue * 0.2 + ')'; // Accent color
+            ctx.strokeStyle = lineColorBase + (opacityValue * lineOpacityScale) + ')';
             ctx.lineWidth = 1;
             ctx.beginPath();
             ctx.moveTo(particlesArray[a].x, particlesArray[a].y);
@@ -269,6 +266,79 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initParticles();
     animateParticles();
+  }
+
+  /* ---- 9. Interactive Contact Form Submission ---- */
+  const contactForm = document.getElementById('contactForm');
+  const contactStatus = document.getElementById('contact-status');
+
+  if (contactForm && contactStatus) {
+    contactForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      const submitBtn = contactForm.querySelector('button[type="submit"]');
+      const originalBtnHtml = submitBtn.innerHTML;
+
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Sending...';
+
+      contactStatus.style.display = 'none';
+      contactStatus.className = 'mt-3 text-center';
+
+      const formData = new FormData(contactForm);
+      const object = Object.fromEntries(formData);
+      const json = JSON.stringify(object);
+
+      fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: json
+      })
+      .then(async (response) => {
+        let res = await response.json();
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnHtml;
+
+        contactStatus.style.display = 'block';
+
+        if (response.status === 200) {
+          contactStatus.className = 'mt-3 text-center alert alert-success border-0 shadow-sm';
+          contactStatus.innerHTML = `
+            <i class="fas fa-check-circle me-2"></i> 
+            <strong>Thank you, ${document.getElementById('fname').value}!</strong> Your message has been sent successfully. I'll get back to you within 24 hours.
+          `;
+          contactForm.reset();
+        } else {
+          contactStatus.className = 'mt-3 text-center alert alert-danger border-0 shadow-sm';
+          contactStatus.innerHTML = `
+            <i class="fas fa-exclamation-circle me-2"></i> 
+            <strong>Oops!</strong> ${res.message || 'Something went wrong. Please try again later.'}
+          `;
+        }
+
+        setTimeout(() => {
+          contactStatus.style.opacity = '0';
+          contactStatus.style.transition = 'opacity 0.5s ease';
+          setTimeout(() => {
+            contactStatus.style.display = 'none';
+            contactStatus.style.opacity = '1';
+          }, 500);
+        }, 7000);
+      })
+      .catch((error) => {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnHtml;
+        contactStatus.style.display = 'block';
+        contactStatus.className = 'mt-3 text-center alert alert-danger border-0 shadow-sm';
+        contactStatus.innerHTML = `
+          <i class="fas fa-exclamation-circle me-2"></i> 
+          <strong>Error!</strong> Could not connect to the mail server. Please check your internet connection.
+        `;
+      });
+    });
   }
 
 });

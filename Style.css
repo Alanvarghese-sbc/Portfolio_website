@@ -27,6 +27,7 @@
   --border-active: rgba(255,255,255,0.5);
 
   --btn-text:      #000000;
+  --navbar-stuck-bg: rgba(8, 12, 22, 0.88);
   
   --radius:    16px;
   --radius-sm: 10px;
@@ -58,6 +59,7 @@
   --border-active: rgba(0,0,0,0.4);
 
   --btn-text:      #ffffff;
+  --navbar-stuck-bg: rgba(255, 255, 255, 0.88);
 }
 
 /* ---- Reset ---- */
@@ -161,7 +163,7 @@ img { display: block; }
 }
 #navbar.stuck {
   padding: 10px 0;
-  background: rgba(8,12,22,.88);
+  background: var(--navbar-stuck-bg);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid var(--border);
@@ -1083,10 +1085,23 @@ a.contact-value:hover { color: var(--accent); }
   .tl-top { flex-direction: column; }
   .tl-right { align-items: flex-start; }
   .contact-info, .contact-form { padding: 28px 22px; }
+
+  /* Added mobile responsiveness alignments */
+  .hero { text-align: center; }
+  .hero-desc { margin-left: auto; margin-right: auto; }
+  .hero-actions { justify-content: center; }
+  .hero-links { justify-content: center; }
+
+  #about { text-align: center; }
+  .about-details { align-items: center; }
+  .about-actions { justify-content: center; }
 }
 @media (max-width: 576px) {
   .hero-title { font-size: 2.2rem; }
   .hero-actions { flex-direction: column; }
   .btn-primary, .btn-ghost { justify-content: center; }
   .tl-card { padding: 20px 18px; }
+}
+@media (max-width: 480px) {
+  .stats-grid { grid-template-columns: 1fr; }
 }
